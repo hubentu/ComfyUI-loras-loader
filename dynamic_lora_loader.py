@@ -1,5 +1,6 @@
 import os
 import folder_paths
+import inspect
 
 class DynamicLoRALoader:
     @classmethod
@@ -39,14 +40,19 @@ class DynamicLoRALoader:
             
         # Get the selected LoRAname
         selected_LoRAname = LoRAname_lines[index]
-        print(f"Selected LoRAname at index {index}: '{selected_LoRAname}'")
+        # print(f"[DEBUG] LoRAname_lines: {LoRAname_lines}")
+        # print(f"[DEBUG] index: {index} (type: {type(index)})")
+        # print(f"[DEBUG] selected_LoRAname: {selected_LoRAname} (type: {type(selected_LoRAname)})")
         
         # Find the LoRA file in any of the lora directories
         lora_path = None
         lora_dirs = folder_paths.get_folder_paths("loras")
+        # print(f"[DEBUG] lora_dirs: {lora_dirs}")
         
         for lora_dir in lora_dirs:
+            # print(f"[DEBUG] Trying lora_dir: {lora_dir}, selected_LoRAname: {selected_LoRAname}")
             potential_path = os.path.join(lora_dir, selected_LoRAname)
+            print(f"[DEBUG] potential_path: {potential_path}")
             if os.path.isfile(potential_path):
                 lora_path = potential_path
                 break
@@ -78,7 +84,23 @@ class DynamicLoRALoader:
                 
                 if nodes_lora and hasattr(nodes_lora, "LoraLoader"):
                     lora_loader = nodes_lora.LoraLoader()
-                    return lora_loader.load_lora(model, lora_path, strength_model, strength_clip, clip)
+                    # Dynamically call with the correct number of arguments based on signature
+                    import inspect
+                    sig = inspect.signature(lora_loader.load_lora)
+                    param_names = list(sig.parameters.keys())
+                    param_count = len(param_names)
+                    # print(f"[DEBUG] lora_loader.load_lora param_names: {param_names}")
+                    # The correct argument order is: model, clip, lora_name (filename only), strength_model, strength_clip
+                    args = [model, clip, selected_LoRAname, strength_model, strength_clip]
+                    # print(f"[DEBUG] lora_loader.load_lora param_count: {param_count}")
+                    # print(f"[DEBUG] args (before trim): {args}")
+                    # Remove trailing arguments if not required
+                    while len(args) > param_count:
+                        args.pop()
+                    print(f"[DEBUG] args (after trim): {args}")
+                    return lora_loader.load_lora(*args)
+
+
                 else:
                     print("Could not find LoraLoader implementation, falling back to manual loading")
             except Exception as e:
@@ -93,8 +115,10 @@ class DynamicLoRALoader:
             
             # Different versions of ComfyUI have different methods for applying LoRAs
             if hasattr(comfy.sd, "load_lora_for_models"):
+                print(f"[DEBUG] Using comfy.sd.load_lora_for_models")
                 return comfy.sd.load_lora_for_models(model, clip, lora_sd, strength_model, strength_clip)
             elif hasattr(comfy.sd, "apply_lora"):
+                print(f"[DEBUG] Using comfy.sd.apply_lora")
                 model_out = model
                 clip_out = clip
                 if model is not None:
