@@ -1,5 +1,5 @@
 import os
-import folder_paths
+import folder_paths # type: ignore
 import inspect
 
 class DynamicLoRALoader:
@@ -31,12 +31,12 @@ class DynamicLoRALoader:
             print("No LoRAname provided. Returning model without changes.")
             return (model, clip)
             
-        if index < 0 or index >= len(LoRAname_lines):
-            print(f"LoRAname index {index} out of range. Using default index 0.")
-            index = 0 if len(LoRAname_lines) > 0 else -1
-            
         if index == -1:
             return (model, clip)
+            
+        if index < 0 or index >= len(LoRAname_lines):
+            print(f"LoRAname index {index} out of range. Using default index 0.")
+            index = 0
             
         # Get the selected LoRAname
         selected_LoRAname = LoRAname_lines[index]

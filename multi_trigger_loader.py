@@ -24,12 +24,13 @@ class MultiTriggerLoader:
             print("No trigger words provided. Returning empty string.")
             return ("",)
             
-        if index < 0 or index >= len(trigger_lines):
-            print(f"Trigger index {index} out of range. Using default index 0.")
-            index = 0 if len(trigger_lines) > 0 else -1
-            
         if index == -1:
             return ("",)
+        
+        if index < 0 or index >= len(trigger_lines):
+            print(f"Trigger index {index} out of range. Using default index 0.")
+            index = 0
+            
             
         # Get the selected trigger
         selected_trigger = trigger_lines[index]
